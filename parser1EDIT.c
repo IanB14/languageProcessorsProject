@@ -39,9 +39,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "global.h"
-#include "scanner.h"
-#include "line.h"
+#include "./headers/global.h"
+#include "./headers/scanner.h"
+#include "./headers/line.h"
 
 
 /*--------------------------------------------------------------------------*/
@@ -65,30 +65,30 @@ PRIVATE TOKEN  CurrentToken;       /*  Parser lookahead token.  Updated by  */
 /*--------------------------------------------------------------------------*/
 
 PRIVATE int  OpenFiles(int argc, char *argv[]);
-ParseProgram(void);
-ParseDeclarations(void);
-ParseProcDeclaration(void);
-ParseParameterList(void);
-ParseFormalParameter(void);
-ParseBlock(void);
-ParseStatement(void);
-ParseSimpleStatement(void);
-ParseRestOfStatement(void);
-ProcCallList(void);
-ParseAssignment(void);
-ParseActualParameter(void);
-ParseWhileStatement(void);
-ParseIfStatement(void);
-ParseReadStatement(void);
-ParseWriteStatement(void);
-ParseExpression(void);
-ParseCompoundTerm(void);
-ParseTerm(void);
-ParseSubTerm(void);
-ParseBooleanExpression(void);
-ParseAddOp(void);
-ParseMultOp(void);
-ParseRelOp(void);
+PRIVATE void ParseProgram();
+PRIVATE void ParseDeclarations(void);
+PRIVATE void ParseProcDeclaration(void);
+PRIVATE void ParseParameterList(void);
+PRIVATE void ParseFormalParameter(void);
+PRIVATE void ParseBlock(void);
+PRIVATE void ParseStatement(void);
+PRIVATE void ParseSimpleStatement(void);
+PRIVATE void ParseRestOfStatement(void);
+PRIVATE void ParseProcCallList(void);
+PRIVATE void ParseAssignment(void);
+PRIVATE void ParseActualParameter(void);
+PRIVATE void ParseWhileStatement(void);
+PRIVATE void ParseIfStatement(void);
+PRIVATE void ParseReadStatement(void);
+PRIVATE void ParseWriteStatement(void);
+PRIVATE void ParseExpression(void);
+PRIVATE void ParseCompoundTerm(void);
+PRIVATE void ParseTerm(void);
+PRIVATE void ParseSubTerm(void);
+PRIVATE void ParseBooleanExpression(void);
+PRIVATE void ParseAddOp(void);
+PRIVATE void ParseMultOp(void);
+PRIVATE void ParseRelOp(void);
 PRIVATE void Accept(int code);
 PRIVATE void ReadToEndOfFile(void);
 
@@ -97,7 +97,7 @@ PRIVATE void ReadToEndOfFile(void);
 /*                                                                          */
 /*  Main: Smallparser entry point.  Sets up parser globals (opens input and */
 /*        output files, initialises current lookahead), then calls          */
-/*        "ParseProgram" to start the parse.                                */*
+/*        "ParseProgram" to start the parse.                                */
 /*                                                                          */
 /*--------------------------------------------------------------------------*/
 
@@ -138,7 +138,7 @@ PUBLIC int main(int argc, char *argv[])
 /*                                                                          */
 /*--------------------------------------------------------------------------*/
 
-PRIVATE void ParseProgram(void)
+PRIVATE void ParseProgram()
 {
 	Accept(PROGRAM);
 	Accept(IDENTIFIER);
@@ -148,7 +148,7 @@ PRIVATE void ParseProgram(void)
 		ParseDeclarations();
 	}
 	
-	while CurrentToken.code == PROCEDURE){
+	while (CurrentToken.code == PROCEDURE){
 		ParseProcDeclaration();
 	}
 	
@@ -179,7 +179,7 @@ PRIVATE void ParseDeclarations(void){
 	Accept (VAR);
 	Accept (IDENTIFIER);
 	
-	while(currentToken.code == COMMA){
+	while(CurrentToken.code == COMMA){
 		Accept(COMMA);
 		Accept (IDENTIFIER);
 	}
@@ -209,17 +209,17 @@ PRIVATE void ParseProcDeclaration(void){
 	Accept(PROCEDURE);
 	Accept(IDENTIFIER);
 	
-	if (currentToken.code == LEFTPARENTHESIS) {
+	if (CurrentToken.code == LEFTPARENTHESIS) {
 		ParseParameterList();
 	}
 
 	Accept(SEMICOLON);
 
-	if (currentToken.code == VAR) {
+	if (CurrentToken.code == VAR) {
 		ParseDeclarations();
 	}
 
-	while (currentToken.code == PROCEDURE) {
+	while (CurrentToken.code == PROCEDURE) {
 		ParseProcDeclaration();
 	}
 
@@ -248,10 +248,10 @@ PRIVATE void ParseProcDeclaration(void){
 
 PRIVATE void ParseParameterList(void) {
 	Accept(LEFTPARENTHESIS);
-	FormalParameter();
+	ParseFormalParameter();
 
-	while (currentToken.code == COLON) {
-		FormalParameter();
+	while (CurrentToken.code == COMMA) {
+		ParseFormalParameter();
 	}
 
 	Accept(RIGHTPARENTHESIS);
@@ -273,7 +273,7 @@ PRIVATE void ParseParameterList(void) {
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseFormalParameter(void) {
-	if (currentToken.code == REF) {
+	if (CurrentToken.code == REF) {
 		Accept(REF);
 	}
 
@@ -298,12 +298,12 @@ PRIVATE void ParseFormalParameter(void) {
 PRIVATE void ParseBlock(void) {
 	Accept(BEGIN);
 
-	while (currentToken.code == WHILE || IF || READ || WRITE) {
+	while (CurrentToken.code == WHILE || IF || READ || WRITE) {
 		ParseStatement();
 		Accept(SEMICOLON);
 	}
 
-	Accept(END)
+	Accept(END);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -330,20 +330,20 @@ PRIVATE void ParseStatement(void) {
 	/*Not sure how simple statement works, but this should call the rest of
 	  the statements correctly.*/
 	
-	if (currentToken.code == WHILE) {
+	if (CurrentToken.code == WHILE) {
 		ParseWhileStatement();
 	}
-	else if (currentToken.code == IF) {
+	else if (CurrentToken.code == IF) {
 		ParseIfStatement();
 	}
-	else if (currentToken.code == READ) {
+	else if (CurrentToken.code == READ) {
 		ParseReadStatement();
 	}
-	else if (currentToken.code == WRITE) {
+	else if (CurrentToken.code == WRITE) {
 		ParseWriteStatement();
 	}
 	else{
-		SimpleStatement();
+		ParseSimpleStatement();
 	}
 
 }
@@ -385,9 +385,9 @@ PRIVATE void ParseSimpleStatement(void) {
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseRestOfStatement(void) {
-	if(currentToken.code == LEFTPARENTHESIS)
+	if(CurrentToken.code == LEFTPARENTHESIS)
 		ParseProcCallList();
-	else if(currentToken.code == ASSIGNMENT)
+	else if(CurrentToken.code == ASSIGNMENT)
 		ParseAssignment();
 	/* Nothing needs to be parsed for epsilon */
 }
@@ -408,12 +408,12 @@ PRIVATE void ParseRestOfStatement(void) {
 /*                                                                          */
 /*--------------------------------------------------------------------------*/
 
-PRIVATE void ProcCallList(void) {
+PRIVATE void ParseProcCallList(void) {
 	Accept(LEFTPARENTHESIS);
 
 	ParseActualParameter();
 
-	while (currentToken.code == COMMA) {
+	while (CurrentToken.code == COMMA) {
 		ParseActualParameter();
 	}
 
@@ -506,7 +506,7 @@ PRIVATE void ParseIfStatement(void) {
 	Accept(THEN);
 	ParseBlock();
 
-	if (currentToken.code == ELSE) {
+	if (CurrentToken.code == ELSE) {
 		Accept(ELSE);
 		ParseBlock();
 	}
@@ -532,7 +532,7 @@ PRIVATE void ParseReadStatement(void) {
 	Accept(READ);
 	Accept(LEFTPARENTHESIS);
 	Accept(IDENTIFIER);
-	while (currentToken.code == COMMA) {
+	while (CurrentToken.code == COMMA) {
 		Accept(COMMA);
 		Accept(IDENTIFIER);
 	}
@@ -559,7 +559,7 @@ PRIVATE void ParseWriteStatement(void) {
 	Accept(WRITE);
 	Accept(LEFTPARENTHESIS);
 	ParseExpression();
-	while (currentToken.code == COMMA) {
+	while (CurrentToken.code == COMMA) {
 		Accept(COMMA);
 		ParseExpression();
 	}
@@ -588,7 +588,7 @@ PRIVATE void ParseWriteStatement(void) {
 
 PRIVATE void ParseExpression(void) {
 	ParseCompoundTerm();
-	while(currentToken.code == ADD || SUBTRACT){
+	while(CurrentToken.code == ADD || SUBTRACT){
 		ParseAddOp();
 		ParseCompoundTerm();
 	}
@@ -616,7 +616,7 @@ PRIVATE void ParseExpression(void) {
 
 PRIVATE void ParseCompoundTerm(void) {
 	ParseTerm();
-	while(currentToken.code == MULTIPLY || DIVIDE){
+	while(CurrentToken.code == MULTIPLY || DIVIDE){
 		ParseMultOp();
 		ParseTerm();
 	}
@@ -643,7 +643,7 @@ PRIVATE void ParseCompoundTerm(void) {
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseTerm(void) {
-	if(currentToken.code == SUBTRACT)
+	if(CurrentToken.code == SUBTRACT)
 		Accept(SUBTRACT);
 	ParseSubTerm();
 }
@@ -669,11 +669,11 @@ PRIVATE void ParseTerm(void) {
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseSubTerm(void) {
-	if(currentToken.code == IDENTIFIER)
+	if(CurrentToken.code == IDENTIFIER)
 		Accept(IDENTIFIER);
-	else if(currentToken.code == INTCONST)
+	else if(CurrentToken.code == INTCONST)
 		Accept(INTCONST);
-	else if(currentToken.code == LEFTPARENTHSIS){
+	else if(CurrentToken.code == LEFTPARENTHESIS){
 		Accept(LEFTPARENTHESIS);
 		ParseExpression();
 		Accept(RIGHTPARENTHESIS);
@@ -727,9 +727,9 @@ PRIVATE void ParseBooleanExpression(void) {
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseAddOp(void) {
-	if(currentToken.code == ADD)
+	if(CurrentToken.code == ADD)
 		Accept(ADD);
-	else if(currentToken.code == SUBTRACT)
+	else if(CurrentToken.code == SUBTRACT)
 		Accept(SUBTRACT);
 }
 
@@ -754,9 +754,9 @@ PRIVATE void ParseAddOp(void) {
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseMultOp(void) {
-	if(currentToken.code == MULTIPLY)
+	if(CurrentToken.code == MULTIPLY)
 		Accept(MULTIPLY);
-	else if(currentToken.code == DIVIDE)
+	else if(CurrentToken.code == DIVIDE)
 		Accept(DIVIDE);
 }
 
@@ -781,15 +781,15 @@ PRIVATE void ParseMultOp(void) {
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseRelOp(void) {
-	if(currentToken.code == EQUALITY)
+	if(CurrentToken.code == EQUALITY)
 		Accept(EQUALITY);
-	else if(currentToken.code == LESSEQUAL)
+	else if(CurrentToken.code == LESSEQUAL)
 		Accept(LESSEQUAL);
-	else if(currentToken.code == GREATEREQUAL)
+	else if(CurrentToken.code == GREATEREQUAL)
 		Accept(GREATEREQUAL);
-	else if(currentToken.code == LESS)
+	else if(CurrentToken.code == LESS)
 		Accept(LESS);
-	else if(currentToken.code == GREATER)
+	else if(CurrentToken.code == GREATER)
 		Accept(GREATER);
 }
 
