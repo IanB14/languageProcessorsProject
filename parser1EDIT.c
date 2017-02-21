@@ -8,32 +8,6 @@
 /*           Ian Burke            13122525                                  */
 /*           Lorcan Chinnock      14174103                                  */
 /*                                                                          */
-/*                                                                          */
-/*       Currently just a copy of "smallparser.c".  To create "parser1.c",  */
-/*       modify this source to reflect the CPL grammar.                     */
-/*                                                                          */
-/*--------------------------------------------------------------------------*/
-/*                                                                          */
-/*       smallparser                                                        */
-/*                                                                          */
-/*       An illustration of the use of the character handler and scanner    */
-/*       in a parser for the language                                       */
-/*                                                                          */
-/*       <Program>     :== "BEGIN" { <Statement> ";" } "END" "."            */
-/*       <Statement>   :== <Identifier> ":=" <Expression>                   */
-/*       <Expression>  :== <Identifier> | <IntConst>                        */
-/*                                                                          */
-/*                                                                          */
-/*       Note - <Identifier> and <IntConst> are provided by the scanner     */
-/*       as tokens IDENTIFIER and INTCONST respectively.                    */
-/*                                                                          */
-/*       Although the listing file generator has to be initialised in       */
-/*       this program, full listing files cannot be generated in the        */
-/*       presence of errors because of the "crash and burn" error-          */
-/*       handling policy adopted. Only the first error is reported, the     */
-/*       remainder of the input is simply copied to the output (using       */
-/*       the routine "ReadToEndOfFile") without further comment.            */
-/*                                                                          */
 /*--------------------------------------------------------------------------*/
 
 #include <stdio.h>
@@ -50,12 +24,12 @@
 /*                                                                          */
 /*--------------------------------------------------------------------------*/
 
-PRIVATE FILE *InputFile;           /*  CPL source comes from here.          */
-PRIVATE FILE *ListFile;            /*  For nicely-formatted syntax errors.  */
+PRIVATE FILE *InputFile; /*  CPL source comes from here.          */
+PRIVATE FILE *ListFile; /*  For nicely-formatted syntax errors.  */
 
-PRIVATE TOKEN  CurrentToken;       /*  Parser lookahead token.  Updated by  */
-	                           /*  routine Accept (below).  Must be     */
-				   /*  initialised before parser starts.    */
+PRIVATE TOKEN CurrentToken; /*  Parser lookahead token.  Updated by  */
+/*  routine Accept (below).  Must be     */
+/*  initialised before parser starts.    */
 
 
 /*--------------------------------------------------------------------------*/
@@ -64,8 +38,8 @@ PRIVATE TOKEN  CurrentToken;       /*  Parser lookahead token.  Updated by  */
 /*                                                                          */
 /*--------------------------------------------------------------------------*/
 
-PRIVATE int  OpenFiles(int argc, char *argv[]);
-PRIVATE void ParseProgram();
+PRIVATE int OpenFiles(int argc, char *argv[]);
+PRIVATE void ParseProgram(void);
 PRIVATE void ParseDeclarations(void);
 PRIVATE void ParseProcDeclaration(void);
 PRIVATE void ParseParameterList(void);
@@ -99,20 +73,19 @@ PRIVATE void ReadToEndOfFile(void);
 /*        output files, initialises current lookahead), then calls          */
 /*        "ParseProgram" to start the parse.                                */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
-PUBLIC int main(int argc, char *argv[])
-{
-	if (OpenFiles(argc, argv)) {
-		InitCharProcessor(InputFile, ListFile);
-		CurrentToken = GetToken();
-		ParseProgram();
-		fclose(InputFile);
-		fclose(ListFile);
-		return  EXIT_SUCCESS;
-	}
-	else
-		return EXIT_FAILURE;
+PUBLIC int main(int argc, char *argv[]) {
+    if (OpenFiles(argc, argv)) {
+        InitCharProcessor(InputFile, ListFile);
+        CurrentToken = GetToken();
+        ParseProgram();
+        fclose(InputFile);
+        fclose(ListFile);
+        return EXIT_SUCCESS;
+    } else
+        return EXIT_FAILURE;
 }
 
 
@@ -136,25 +109,25 @@ PUBLIC int main(int argc, char *argv[])
 /*                                                                          */
 /*    Side Effects: Lookahead token advanced.                               */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
-PRIVATE void ParseProgram()
-{
-	Accept(PROGRAM);
-	Accept(IDENTIFIER);
-	Accept(SEMICOLON);
-	
-	if (CurrentToken.code == VAR) {
-		ParseDeclarations();
-	}
-	
-	while (CurrentToken.code == PROCEDURE){
-		ParseProcDeclaration();
-	}
-	
-	ParseBlock();
+PRIVATE void ParseProgram(void) {
+    Accept(PROGRAM);
+    Accept(IDENTIFIER);
+    Accept(SEMICOLON);
 
-    Accept( ENDOFPROGRAM );     /* Token "." has name ENDOFPROGRAM          */
+    if (CurrentToken.code == VAR) {
+        ParseDeclarations();
+    }
+
+    while (CurrentToken.code == PROCEDURE) {
+        ParseProcDeclaration();
+    }
+
+    ParseBlock();
+
+    Accept(ENDOFPROGRAM); /* Token "." has name ENDOFPROGRAM          */
 }
 
 
@@ -172,19 +145,20 @@ PRIVATE void ParseProgram()
 /*                                                                          */
 /*    Side Effects: Lookahead token advanced.                               */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
 
-PRIVATE void ParseDeclarations(void){
-	Accept (VAR);
-	Accept (IDENTIFIER);
-	
-	while(CurrentToken.code == COMMA){
-		Accept(COMMA);
-		Accept (IDENTIFIER);
-	}
-	
-	Accept(SEMICOLON);
+PRIVATE void ParseDeclarations(void) {
+    Accept(VAR);
+    Accept(IDENTIFIER);
+
+    while (CurrentToken.code == COMMA) {
+        Accept(COMMA);
+        Accept(IDENTIFIER);
+    }
+
+    Accept(SEMICOLON);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -202,30 +176,31 @@ PRIVATE void ParseDeclarations(void){
 /*                                                                          */
 /*    Side Effects: Lookahead token advanced.                               */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
 
-PRIVATE void ParseProcDeclaration(void){
-	Accept(PROCEDURE);
-	Accept(IDENTIFIER);
-	
-	if (CurrentToken.code == LEFTPARENTHESIS) {
-		ParseParameterList();
-	}
+PRIVATE void ParseProcDeclaration(void) {
+    Accept(PROCEDURE);
+    Accept(IDENTIFIER);
 
-	Accept(SEMICOLON);
+    if (CurrentToken.code == LEFTPARENTHESIS) {
+        ParseParameterList();
+    }
 
-	if (CurrentToken.code == VAR) {
-		ParseDeclarations();
-	}
+    Accept(SEMICOLON);
 
-	while (CurrentToken.code == PROCEDURE) {
-		ParseProcDeclaration();
-	}
+    if (CurrentToken.code == VAR) {
+        ParseDeclarations();
+    }
 
-	ParseBlock();
+    while (CurrentToken.code == PROCEDURE) {
+        ParseProcDeclaration();
+    }
 
-	Accept(SEMICOLON);
+    ParseBlock();
+
+    Accept(SEMICOLON);
 }
 
 
@@ -243,18 +218,20 @@ PRIVATE void ParseProcDeclaration(void){
 /*                                                                          */
 /*    Side Effects: Lookahead token advanced.                               */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
 
 PRIVATE void ParseParameterList(void) {
-	Accept(LEFTPARENTHESIS);
-	ParseFormalParameter();
+    Accept(LEFTPARENTHESIS);
+    ParseFormalParameter();
 
-	while (CurrentToken.code == COMMA) {
-		ParseFormalParameter();
-	}
+    while (CurrentToken.code == COMMA) {
+        Accept(COMMA);
+        ParseFormalParameter();
+    }
 
-	Accept(RIGHTPARENTHESIS);
+    Accept(RIGHTPARENTHESIS);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -270,14 +247,15 @@ PRIVATE void ParseParameterList(void) {
 /*                                                                          */
 /*    Side Effects: Lookahead token advanced.                               */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseFormalParameter(void) {
-	if (CurrentToken.code == REF) {
-		Accept(REF);
-	}
+    if (CurrentToken.code == REF) {
+        Accept(REF);
+    }
 
-	Accept(IDENTIFIER);
+    Accept(IDENTIFIER);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -293,17 +271,18 @@ PRIVATE void ParseFormalParameter(void) {
 /*                                                                          */
 /*    Side Effects: Lookahead token advanced.                               */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseBlock(void) {
-	Accept(BEGIN);
+    Accept(BEGIN);
 
-	while (CurrentToken.code == WHILE || IF || READ || WRITE) {
-		ParseStatement();
-		Accept(SEMICOLON);
-	}
+    while (CurrentToken.code == WHILE || CurrentToken.code == IF || CurrentToken.code == READ || CurrentToken.code == WRITE || CurrentToken.code == IDENTIFIER) {
+        ParseStatement();
+        Accept(SEMICOLON);
+    }
 
-	Accept(END);
+    Accept(END);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -323,28 +302,25 @@ PRIVATE void ParseBlock(void) {
 /*                                                                          */
 /*    Side Effects: Lookahead token advanced.                               */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseStatement(void) {
-	
-	/*Not sure how simple statement works, but this should call the rest of
-	  the statements correctly.*/
-	
-	if (CurrentToken.code == WHILE) {
-		ParseWhileStatement();
-	}
-	else if (CurrentToken.code == IF) {
-		ParseIfStatement();
-	}
-	else if (CurrentToken.code == READ) {
-		ParseReadStatement();
-	}
-	else if (CurrentToken.code == WRITE) {
-		ParseWriteStatement();
-	}
-	else{
-		ParseSimpleStatement();
-	}
+
+    /*Not sure how simple statement works, but this should call the rest of
+      the statements correctly.*/
+
+    if (CurrentToken.code == WHILE) {
+        ParseWhileStatement();
+    } else if (CurrentToken.code == IF) {
+        ParseIfStatement();
+    } else if (CurrentToken.code == READ) {
+        ParseReadStatement();
+    } else if (CurrentToken.code == WRITE) {
+        ParseWriteStatement();
+    } else {
+        ParseSimpleStatement();
+    }
 
 }
 
@@ -361,11 +337,12 @@ PRIVATE void ParseStatement(void) {
 /*                                                                          */
 /*    Side Effects: Lookahead token advanced.                               */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseSimpleStatement(void) {
-	Accept(IDENTIFIER);
-	ParseRestOfStatement();
+    Accept(IDENTIFIER);
+    ParseRestOfStatement();
 }
 
 /*--------------------------------------------------------------------------*/
@@ -382,14 +359,15 @@ PRIVATE void ParseSimpleStatement(void) {
 /*                                                                          */
 /*    Side Effects: Lookahead token advanced.                               */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseRestOfStatement(void) {
-	if(CurrentToken.code == LEFTPARENTHESIS)
-		ParseProcCallList();
-	else if(CurrentToken.code == ASSIGNMENT)
-		ParseAssignment();
-	/* Nothing needs to be parsed for epsilon */
+    if (CurrentToken.code == LEFTPARENTHESIS)
+        ParseProcCallList();
+    else if (CurrentToken.code == ASSIGNMENT)
+        ParseAssignment();
+    /* Nothing needs to be parsed for epsilon */
 }
 
 /*--------------------------------------------------------------------------*/
@@ -406,18 +384,19 @@ PRIVATE void ParseRestOfStatement(void) {
 /*                                                                          */
 /*    Side Effects: Lookahead token advanced.                               */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseProcCallList(void) {
-	Accept(LEFTPARENTHESIS);
+    Accept(LEFTPARENTHESIS);
 
-	ParseActualParameter();
+    ParseActualParameter();
 
-	while (CurrentToken.code == COMMA) {
-		ParseActualParameter();
-	}
+    while (CurrentToken.code == COMMA) {
+        ParseActualParameter();
+    }
 
-	Accept(RIGHTPARENTHESIS);
+    Accept(RIGHTPARENTHESIS);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -433,11 +412,12 @@ PRIVATE void ParseProcCallList(void) {
 /*                                                                          */
 /*    Side Effects: Lookahead token advanced.                               */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseAssignment(void) {
-	Accept(ASSIGNMENT);
-	ParseExpression();
+    Accept(ASSIGNMENT);
+    ParseExpression();
 }
 
 /*--------------------------------------------------------------------------*/
@@ -453,11 +433,12 @@ PRIVATE void ParseAssignment(void) {
 /*                                                                          */
 /*    Side Effects: Lookahead token advanced.                               */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseActualParameter(void) {
-	Accept(IDENTIFIER);
-	ParseExpression();
+    Accept(IDENTIFIER);
+    ParseExpression();
 }
 
 /*--------------------------------------------------------------------------*/
@@ -473,13 +454,14 @@ PRIVATE void ParseActualParameter(void) {
 /*                                                                          */
 /*    Side Effects: Lookahead token advanced.                               */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseWhileStatement(void) {
-	Accept(WHILE);
-	ParseBooleanExpression();
-	Accept(DO);
-	ParseBlock();
+    Accept(WHILE);
+    ParseBooleanExpression();
+    Accept(DO);
+    ParseBlock();
 }
 
 
@@ -498,18 +480,19 @@ PRIVATE void ParseWhileStatement(void) {
 /*                                                                          */
 /*    Side Effects: Lookahead token advanced.                               */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseIfStatement(void) {
-	Accept(IF);
-	ParseBooleanExpression();
-	Accept(THEN);
-	ParseBlock();
+    Accept(IF);
+    ParseBooleanExpression();
+    Accept(THEN);
+    ParseBlock();
 
-	if (CurrentToken.code == ELSE) {
-		Accept(ELSE);
-		ParseBlock();
-	}
+    if (CurrentToken.code == ELSE) {
+        Accept(ELSE);
+        ParseBlock();
+    }
 }
 
 /*--------------------------------------------------------------------------*/
@@ -526,17 +509,18 @@ PRIVATE void ParseIfStatement(void) {
 /*                                                                          */
 /*    Side Effects: Lookahead token advanced.                               */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseReadStatement(void) {
-	Accept(READ);
-	Accept(LEFTPARENTHESIS);
-	Accept(IDENTIFIER);
-	while (CurrentToken.code == COMMA) {
-		Accept(COMMA);
-		Accept(IDENTIFIER);
-	}
-	Accept(RIGHTPARENTHESIS);
+    Accept(READ);
+    Accept(LEFTPARENTHESIS);
+    Accept(IDENTIFIER);
+    while (CurrentToken.code == COMMA) {
+        Accept(COMMA);
+        Accept(IDENTIFIER);
+    }
+    Accept(RIGHTPARENTHESIS);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -553,17 +537,18 @@ PRIVATE void ParseReadStatement(void) {
 /*                                                                          */
 /*    Side Effects: Lookahead token advanced.                               */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseWriteStatement(void) {
-	Accept(WRITE);
-	Accept(LEFTPARENTHESIS);
-	ParseExpression();
-	while (CurrentToken.code == COMMA) {
-		Accept(COMMA);
-		ParseExpression();
-	}
-	Accept(RIGHTPARENTHESIS);
+    Accept(WRITE);
+    Accept(LEFTPARENTHESIS);
+    ParseExpression();
+    while (CurrentToken.code == COMMA) {
+        Accept(COMMA);
+        ParseExpression();
+    }
+    Accept(RIGHTPARENTHESIS);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -584,14 +569,15 @@ PRIVATE void ParseWriteStatement(void) {
 /*                                                                          */
 /*    Side Effects: Lookahead token advanced.                               */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseExpression(void) {
-	ParseCompoundTerm();
-	while(CurrentToken.code == ADD || SUBTRACT){
-		ParseAddOp();
-		ParseCompoundTerm();
-	}
+    ParseCompoundTerm();
+    while (CurrentToken.code == ADD || CurrentToken.code == SUBTRACT) {
+        ParseAddOp();
+        ParseCompoundTerm();
+    }
 }
 
 /*--------------------------------------------------------------------------*/
@@ -612,14 +598,15 @@ PRIVATE void ParseExpression(void) {
 /*                                                                          */
 /*    Side Effects: Lookahead token advanced.                               */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseCompoundTerm(void) {
-	ParseTerm();
-	while(CurrentToken.code == MULTIPLY || DIVIDE){
-		ParseMultOp();
-		ParseTerm();
-	}
+    ParseTerm();
+    while (CurrentToken.code == MULTIPLY || CurrentToken.code == DIVIDE) {
+        ParseMultOp();
+        ParseTerm();
+    }
 }
 
 /*--------------------------------------------------------------------------*/
@@ -640,12 +627,13 @@ PRIVATE void ParseCompoundTerm(void) {
 /*                                                                          */
 /*    Side Effects: Lookahead token advanced.                               */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseTerm(void) {
-	if(CurrentToken.code == SUBTRACT)
-		Accept(SUBTRACT);
-	ParseSubTerm();
+    if (CurrentToken.code == SUBTRACT)
+        Accept(SUBTRACT);
+    ParseSubTerm();
 }
 
 /*--------------------------------------------------------------------------*/
@@ -666,18 +654,19 @@ PRIVATE void ParseTerm(void) {
 /*                                                                          */
 /*    Side Effects: Lookahead token advanced.                               */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseSubTerm(void) {
-	if(CurrentToken.code == IDENTIFIER)
-		Accept(IDENTIFIER);
-	else if(CurrentToken.code == INTCONST)
-		Accept(INTCONST);
-	else if(CurrentToken.code == LEFTPARENTHESIS){
-		Accept(LEFTPARENTHESIS);
-		ParseExpression();
-		Accept(RIGHTPARENTHESIS);
-	}
+    if (CurrentToken.code == IDENTIFIER)
+        Accept(IDENTIFIER);
+    else if (CurrentToken.code == INTCONST)
+        Accept(INTCONST);
+    else if (CurrentToken.code == LEFTPARENTHESIS) {
+        Accept(LEFTPARENTHESIS);
+        ParseExpression();
+        Accept(RIGHTPARENTHESIS);
+    }
 }
 
 /*--------------------------------------------------------------------------*/
@@ -698,12 +687,13 @@ PRIVATE void ParseSubTerm(void) {
 /*                                                                          */
 /*    Side Effects: Lookahead token advanced.                               */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseBooleanExpression(void) {
-	ParseExpression();
-	ParseRelOp();
-	ParseExpression();
+    ParseExpression();
+    ParseRelOp();
+    ParseExpression();
 }
 
 /*--------------------------------------------------------------------------*/
@@ -724,13 +714,14 @@ PRIVATE void ParseBooleanExpression(void) {
 /*                                                                          */
 /*    Side Effects: Lookahead token advanced.                               */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseAddOp(void) {
-	if(CurrentToken.code == ADD)
-		Accept(ADD);
-	else if(CurrentToken.code == SUBTRACT)
-		Accept(SUBTRACT);
+    if (CurrentToken.code == ADD)
+        Accept(ADD);
+    else if (CurrentToken.code == SUBTRACT)
+        Accept(SUBTRACT);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -751,13 +742,14 @@ PRIVATE void ParseAddOp(void) {
 /*                                                                          */
 /*    Side Effects: Lookahead token advanced.                               */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseMultOp(void) {
-	if(CurrentToken.code == MULTIPLY)
-		Accept(MULTIPLY);
-	else if(CurrentToken.code == DIVIDE)
-		Accept(DIVIDE);
+    if (CurrentToken.code == MULTIPLY)
+        Accept(MULTIPLY);
+    else if (CurrentToken.code == DIVIDE)
+        Accept(DIVIDE);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -778,19 +770,20 @@ PRIVATE void ParseMultOp(void) {
 /*                                                                          */
 /*    Side Effects: Lookahead token advanced.                               */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseRelOp(void) {
-	if(CurrentToken.code == EQUALITY)
-		Accept(EQUALITY);
-	else if(CurrentToken.code == LESSEQUAL)
-		Accept(LESSEQUAL);
-	else if(CurrentToken.code == GREATEREQUAL)
-		Accept(GREATEREQUAL);
-	else if(CurrentToken.code == LESS)
-		Accept(LESS);
-	else if(CurrentToken.code == GREATER)
-		Accept(GREATER);
+    if (CurrentToken.code == EQUALITY)
+        Accept(EQUALITY);
+    else if (CurrentToken.code == LESSEQUAL)
+        Accept(LESSEQUAL);
+    else if (CurrentToken.code == GREATEREQUAL)
+        Accept(GREATEREQUAL);
+    else if (CurrentToken.code == LESS)
+        Accept(LESS);
+    else if (CurrentToken.code == GREATER)
+        Accept(GREATER);
 }
 
 /*  No need to parse Variable                                               */
@@ -828,18 +821,17 @@ PRIVATE void ParseRelOp(void) {
 /*    Side Effects: If successful, advances the current lookahead token     */
 /*                  "CurrentToken".                                         */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
-PRIVATE void Accept( int ExpectedToken )
-{
-    if ( CurrentToken.code != ExpectedToken )  {
-        SyntaxError( ExpectedToken, CurrentToken );
+PRIVATE void Accept(int ExpectedToken) {
+    if (CurrentToken.code != ExpectedToken) {
+        SyntaxError(ExpectedToken, CurrentToken);
         ReadToEndOfFile();
-        fclose( InputFile );
-        fclose( ListFile );
-        exit( EXIT_FAILURE );
-    }
-    else  CurrentToken = GetToken();
+        fclose(InputFile);
+        fclose(ListFile);
+        exit(EXIT_FAILURE);
+    } else CurrentToken = GetToken();
 }
 
 
@@ -865,24 +857,24 @@ PRIVATE void Accept( int ExpectedToken )
 /*    Side Effects: If successful, modifies globals "InputFile" and         */
 /*                  "ListingFile".                                          */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
-PRIVATE int  OpenFiles( int argc, char *argv[] )
-{
+PRIVATE int OpenFiles(int argc, char *argv[]) {
 
-    if ( argc != 3 )  {
-        fprintf( stderr, "%s <inputfile> <listfile>\n", argv[0] );
+    if (argc != 3) {
+        fprintf(stderr, "%s <inputfile> <listfile>\n", argv[0]);
         return 0;
     }
 
-    if ( NULL == ( InputFile = fopen( argv[1], "r" ) ) )  {
-        fprintf( stderr, "cannot open \"%s\" for input\n", argv[1] );
+    if (NULL == (InputFile = fopen(argv[1], "r"))) {
+        fprintf(stderr, "cannot open \"%s\" for input\n", argv[1]);
         return 0;
     }
 
-    if ( NULL == ( ListFile = fopen( argv[2], "w" ) ) )  {
-        fprintf( stderr, "cannot open \"%s\" for output\n", argv[2] );
-        fclose( InputFile );
+    if (NULL == (ListFile = fopen(argv[2], "w"))) {
+        fprintf(stderr, "cannot open \"%s\" for output\n", argv[2]);
+        fclose(InputFile);
         return 0;
     }
 
@@ -912,12 +904,12 @@ PRIVATE int  OpenFiles( int argc, char *argv[] )
 /*    Side Effects: Reads all remaining tokens from the input.  There won't */
 /*                  be any more available input after this routine returns. */
 /*                                                                          */
+
 /*--------------------------------------------------------------------------*/
 
-PRIVATE void ReadToEndOfFile( void )
-{
-    if ( CurrentToken.code != ENDOFINPUT )  {
-        Error( "Parsing ends here in this program\n", CurrentToken.pos );
-        while ( CurrentToken.code != ENDOFINPUT )  CurrentToken = GetToken();
+PRIVATE void ReadToEndOfFile(void) {
+    if (CurrentToken.code != ENDOFINPUT) {
+        Error("Parsing ends here in this program\n", CurrentToken.pos);
+        while (CurrentToken.code != ENDOFINPUT) CurrentToken = GetToken();
     }
 }
