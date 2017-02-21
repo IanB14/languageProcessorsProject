@@ -83,6 +83,7 @@ PUBLIC int main(int argc, char *argv[]) {
         ParseProgram();
         fclose(InputFile);
         fclose(ListFile);
+        printf("Valid\n");
         return EXIT_SUCCESS;
     } else
         return EXIT_FAILURE;
@@ -827,6 +828,7 @@ PRIVATE void ParseRelOp(void) {
 PRIVATE void Accept(int ExpectedToken) {
     if (CurrentToken.code != ExpectedToken) {
         SyntaxError(ExpectedToken, CurrentToken);
+        printf("Syntax Error\n");
         ReadToEndOfFile();
         fclose(InputFile);
         fclose(ListFile);
