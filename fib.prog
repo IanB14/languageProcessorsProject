@@ -1,0 +1,41 @@
+!-----------------------------------------------
+!
+! Calculate Fibonacci numbers using recursion.
+!
+PROGRAM calculatefib;
+VAR m, fibm;                ! Program globals.
+
+    !-------------------------------------------
+    !
+    !  fibonacci -- recursive Fibonacci number
+    !  calculation.  Calculate the n'th
+    !  Fibonacci number and return it in
+    !  "fib".  N.B., argument "n" must be
+    !  positive.
+    !  "n" is a value parameter and "fib" a
+    !  reference parameter.
+    !
+    PROCEDURE fibonacci(n, REF fib);
+    VAR fibm1, fibm2;       ! Procedure locals.
+    BEGIN
+        IF n <= 1 THEN BEGIN
+            fib := n;    ! true for n = 0 or n = 1
+        END
+        ELSE BEGIN
+            fibonacci(n-1,fibm1);
+            fibonacci(n-2,fibm2);
+            fib := fibm1 + fibm2;
+        END;
+    END;    ! End of procedure fibonacci
+    !-------------------------------------------
+
+BEGIN
+    READ(m);
+    IF m >= 0 THEN BEGIN
+        fibonacci(m,fibm); WRITE(m, fibm);
+    END
+    ELSE BEGIN   ! Print error code for -ve arg.
+        WRITE(-9999);
+    END;
+END.
+!-----------------------------------------------
