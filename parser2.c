@@ -826,16 +826,18 @@ PRIVATE void ParseRelOp(void) {
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void Accept(int ExpectedToken) {
+    static int recovering = 0;
+    if (recovering) {
+        while(CurrentToken.code != ExpectedToken && CurrentToken.code != ENDOFINPUT)
+            CurrentToken = GetToken();
+        recovering = 0;
+    }
     if (CurrentToken.code != ExpectedToken) {
         SyntaxError(ExpectedToken, CurrentToken);
         printf("Syntax Error\n");
-        ReadToEndOfFile();
-        fclose(InputFile);
-        fclose(ListFile);
-        exit(EXIT_FAILURE);
+        recovering = 1;
     } else CurrentToken = GetToken();
 }
-
 
 /*--------------------------------------------------------------------------*/
 /*                                                                          */
@@ -859,7 +861,7 @@ PRIVATE void Accept(int ExpectedToken) {
 /*    Side Effects: If successful, modifies globals "InputFile" and         */
 /*                  "ListingFile".                                          */
 /*                                                                          */
-
+*
 /*--------------------------------------------------------------------------*/
 
 PRIVATE int OpenFiles(int argc, char *argv[]) {
