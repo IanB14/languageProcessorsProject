@@ -64,7 +64,6 @@ PRIVATE void ParseAddOp(void);
 PRIVATE void ParseMultOp(void);
 PRIVATE void ParseRelOp(void);
 PRIVATE void Accept(int code);
-PRIVATE void ReadToEndOfFile(void);
 
 
 /*--------------------------------------------------------------------------*/
@@ -75,6 +74,7 @@ PRIVATE void ReadToEndOfFile(void);
 /*                                                                          */
 
 /*--------------------------------------------------------------------------*/
+int errCount = 0;
 
 PUBLIC int main(int argc, char *argv[]) {
     if (OpenFiles(argc, argv)) {
@@ -83,7 +83,9 @@ PUBLIC int main(int argc, char *argv[]) {
         ParseProgram();
         fclose(InputFile);
         fclose(ListFile);
-        printf("Valid\n");
+        if (errCount == 0) {
+            printf("Valid\n");
+        }
         return EXIT_SUCCESS;
     } else
         return EXIT_FAILURE;
@@ -826,16 +828,19 @@ PRIVATE void ParseRelOp(void) {
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void Accept(int ExpectedToken) {
+    static int recovering = 0;
+    if (recovering) {
+        while (CurrentToken.code != ExpectedToken && CurrentToken.code != ENDOFINPUT)
+            CurrentToken = GetToken();
+        recovering = 0;
+    }
     if (CurrentToken.code != ExpectedToken) {
-        SyntaxError(ExpectedToken, CurrentToken);
         printf("Syntax Error\n");
-        ReadToEndOfFile();
-        fclose(InputFile);
-        fclose(ListFile);
-        exit(EXIT_FAILURE);
+        SyntaxError(ExpectedToken, CurrentToken);
+        errCount++;
+        recovering = 1;
     } else CurrentToken = GetToken();
 }
-
 
 /*--------------------------------------------------------------------------*/
 /*                                                                          */
@@ -881,37 +886,4 @@ PRIVATE int OpenFiles(int argc, char *argv[]) {
     }
 
     return 1;
-}
-
-
-/*--------------------------------------------------------------------------*/
-/*                                                                          */
-/*  ReadToEndOfFile:  Reads all remaining tokens from the input file.       */
-/*              associated input and listing files.                         */
-/*                                                                          */
-/*    This is used to ensure that the listing file refects the entire       */
-/*    input, even after a syntax error (because of crash & burn parsing,    */
-/*    if a routine like this is not used, the listing file will not be      */
-/*    complete.  Note that this routine also reports in the listing file    */
-/*    exactly where the parsing stopped.  Note that this routine is         */
-/*    superfluous in a parser that performs error-recovery.                 */
-/*                                                                          */
-/*                                                                          */
-/*    Inputs:       None                                                    */
-/*                                                                          */
-/*    Outputs:      None                                                    */
-/*                                                                          */
-/*    Returns:      Nothing                                                 */
-/*                                                                          */
-/*    Side Effects: Reads all remaining tokens from the input.  There won't */
-/*                  be any more available input after this routine returns. */
-/*                                                                          */
-
-/*--------------------------------------------------------------------------*/
-
-PRIVATE void ReadToEndOfFile(void) {
-    if (CurrentToken.code != ENDOFINPUT) {
-        Error("Parsing ends here in this program\n", CurrentToken.pos);
-        while (CurrentToken.code != ENDOFINPUT) CurrentToken = GetToken();
-    }
 }
