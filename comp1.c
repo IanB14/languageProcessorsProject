@@ -896,7 +896,6 @@ PRIVATE void MakeSymbolTableEntry(int symtype) {
             if (oldsptr == NULL) cptr = CurrentToken.s;
             else cptr = oldsptr.s;
             if (NULL == (newsptr = EnterSymbol(cptr, hashindex))) {
-                ?Fatal internal error in EnterSymbol, compiler must exit : code for this goes here?
                 } else {
                 if (oldsptr == NULL) PreserveString();
                 newsptr.scope = scope;
@@ -907,7 +906,6 @@ PRIVATE void MakeSymbolTableEntry(int symtype) {
                 } else newsptr.address = -1;
             }
         } else {
-            ?Error, variable already declared : code for this goes here?
             }
     }
 }
