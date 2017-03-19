@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------*/
 /*                                                                          */
-/*       parser2.c                                                          */
+/*       comp1.c                                                          */
 /*                                                                          */
 /*                                                                          */
 /*       Group Members:          ID numbers                                 */
@@ -13,9 +13,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "./headers/code.h"
+#include "./headers/debug.h"
 #include "./headers/global.h"
-#include "./headers/scanner.h"
 #include "./headers/line.h"
+#include "./headers/scanner.h"
+#include "./headers/sets.h"
+#include "./headers/strtab.h"
+#include "./headers/symbol.h"
+
 
 
 /*--------------------------------------------------------------------------*/
@@ -64,7 +70,7 @@ PRIVATE void ParseAddOp(void);
 PRIVATE void ParseMultOp(void);
 PRIVATE void ParseRelOp(void);
 PRIVATE void Accept(int code);
-
+PRIVATE void MakeSymbolTableEntry(int symtype);
 
 /*--------------------------------------------------------------------------*/
 /*                                                                          */
@@ -74,8 +80,9 @@ PRIVATE void Accept(int code);
 /*                                                                          */
 
 /*--------------------------------------------------------------------------*/
-int errCount = 0;
-int scope = 0;
+int errCount = 0; //Int that counts amount of errors received by parser
+int scope = 0; //Global scope
+
 
 PUBLIC int main(int argc, char *argv[]) {
     if (OpenFiles(argc, argv)) {
@@ -118,6 +125,7 @@ PUBLIC int main(int argc, char *argv[]) {
 
 PRIVATE void ParseProgram(void) {
     Accept(PROGRAM);
+    MakeSymbolTableEntry(STYPE_PROGRAM);    
     Accept(IDENTIFIER);
     Accept(SEMICOLON);
 
@@ -155,10 +163,12 @@ PRIVATE void ParseProgram(void) {
 
 PRIVATE void ParseDeclarations(void) {
     Accept(VAR);
+    MakeSymbolTableEntry(STYPE_VARIABLE);
     Accept(IDENTIFIER);
 
     while (CurrentToken.code == COMMA) {
         Accept(COMMA);
+        MakeSymbolTableEntry(STYPE_VARIABLE);
         Accept(IDENTIFIER);
     }
 
@@ -186,8 +196,8 @@ PRIVATE void ParseDeclarations(void) {
 
 PRIVATE void ParseProcDeclaration(void) {
     Accept(PROCEDURE);
+    MakeSymbolTableEntry(STYPE_PROCEDURE);
     Accept(IDENTIFIER);
-
     if (CurrentToken.code == LEFTPARENTHESIS) {
         ParseParameterList();
     }
@@ -205,6 +215,8 @@ PRIVATE void ParseProcDeclaration(void) {
     ParseBlock();
 
     Accept(SEMICOLON);
+    RemoveSymbols(scope);
+    scope--;
 }
 
 
@@ -257,8 +269,11 @@ PRIVATE void ParseParameterList(void) {
 PRIVATE void ParseFormalParameter(void) {
     if (CurrentToken.code == REF) {
         Accept(REF);
+        MakeSymbolTableEntry(STYPE_REFPAR);
     }
-
+    else{
+        MakeSymbolTableEntry(STYPE_VALUEPAR);
+    }
     Accept(IDENTIFIER);
 }
 
@@ -344,7 +359,7 @@ PRIVATE void ParseStatement(void) {
 
 /*--------------------------------------------------------------------------*/
 
-PRIVATE void ParseSimpleStatement(void) {
+PRIVATE void ParseSimpleStatement(void) {   
     Accept(IDENTIFIER);
     ParseRestOfStatement();
 }
@@ -890,22 +905,47 @@ PRIVATE int OpenFiles(int argc, char *argv[]) {
 }
 
 PRIVATE void MakeSymbolTableEntry(int symtype) {
-    
+    //Variable declarations
+    PRIVATE SYMBOL *oldsptr;
+    PRIVATE SYMBOL *newsptr;
+    char *cptr;
+    int hashindex;
+    int varaddress;
     if (CurrentToken.code == IDENTIFIER) {
-        if (NULL == (oldsptr = Probe(CurrentToken.s, &hashindex)) || oldsptr.scope < scope) {
-            if (oldsptr == NULL) cptr = CurrentToken.s;
-            else cptr = oldsptr.s;
+        if (NULL == (oldsptr = Probe(CurrentToken.s, &hashindex)) || oldsptr->scope < scope) {
+            if (oldsptr == NULL) 
+                cptr = CurrentToken.s;
+            else 
+                cptr = oldsptr->s;
             if (NULL == (newsptr = EnterSymbol(cptr, hashindex))) {
-                } else {
+                KillCodeGeneration();
+            } 
+            else {
                 if (oldsptr == NULL) PreserveString();
-                newsptr.scope = scope;
-                newsptr.type = symtype;
+                newsptr->scope = scope;
+                newsptr->type = symtype;
                 if (symtype == STYPE_VARIABLE) {
-                    newsptr.address = varaddress;
+                    newsptr->address = varaddress;
                     varaddress++;
-                } else newsptr.address = -1;
+                } else newsptr->address = -1;
             }
-        } else {
-            }
+        } 
+        else {
+            Error("Variable already declared", CurrentToken.pos);
+        }
     }
 }
+
+PRIVATE SYMBOL *LookupSymbol(void) {
+    SYMBOL *sptr;
+    if (CurrentToken.code == IDENTIFIER) {
+        sptr = Probe(CurrentToken.s, NULL);
+        if (sptr == NULL) {
+            Error("Identifier not declared", CurrentToken.pos);
+            KillCodeGeneration();
+        }
+    } 
+    else 
+        sptr = NULL;
+    return sptr;
+} 
