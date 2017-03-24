@@ -396,6 +396,7 @@ PRIVATE void ParseProcCallList(void) {
     ParseActualParameter();
 
     while (CurrentToken.code == COMMA) {
+        Accept(COMMA);
         ParseActualParameter();
     }
 
@@ -440,8 +441,15 @@ PRIVATE void ParseAssignment(void) {
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseActualParameter(void) {
-    Accept(IDENTIFIER);
-    ParseExpression();
+    if(CurrentToken.code == SUBTRACT) {
+        ParseExpression();
+    }
+    else if(CurrentToken.code==IDENTIFIER||CurrentToken.code==INTCONST||CurrentToken.code==LEFTPARENTHESIS){
+        ParseExpression();
+    }
+    else{ //May need to put a check in
+        Accept(IDENTIFIER);
+    }
 }
 
 /*--------------------------------------------------------------------------*/
