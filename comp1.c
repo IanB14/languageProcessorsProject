@@ -359,7 +359,8 @@ PRIVATE void ParseStatement(void) {
 
 /*--------------------------------------------------------------------------*/
 
-PRIVATE void ParseSimpleStatement(void) {   
+PRIVATE void ParseSimpleStatement(void) {
+    MakeSymbolTableEntry(STYPE_VALUEPAR);
     Accept(IDENTIFIER);
     ParseRestOfStatement();
 }
@@ -412,6 +413,7 @@ PRIVATE void ParseProcCallList(void) {
     ParseActualParameter();
 
     while (CurrentToken.code == COMMA) {
+        Accept(COMMA);
         ParseActualParameter();
     }
 
@@ -456,8 +458,15 @@ PRIVATE void ParseAssignment(void) {
 /*--------------------------------------------------------------------------*/
 
 PRIVATE void ParseActualParameter(void) {
-    Accept(IDENTIFIER);
-    ParseExpression();
+    if(CurrentToken.code == SUBTRACT) {
+        ParseExpression();
+    }
+    else if(CurrentToken.code==IDENTIFIER||CurrentToken.code==INTCONST||CurrentToken.code==LEFTPARENTHESIS){
+        ParseExpression();
+    }
+    else{
+        Accept(IDENTIFIER);
+    }
 }
 
 /*--------------------------------------------------------------------------*/
