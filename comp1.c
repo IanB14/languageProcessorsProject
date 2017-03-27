@@ -465,6 +465,7 @@ PRIVATE void ParseActualParameter(void) {
         ParseExpression();
     }
     else{
+        MakeSymbolTableEntry(STYPE_LOCALVAR);
         Accept(IDENTIFIER);
     }
 }
@@ -543,9 +544,11 @@ PRIVATE void ParseIfStatement(void) {
 PRIVATE void ParseReadStatement(void) {
     Accept(READ);
     Accept(LEFTPARENTHESIS);
+    MakeSymbolTableEntry(STYPE_VALUEPAR);
     Accept(IDENTIFIER);
     while (CurrentToken.code == COMMA) {
         Accept(COMMA);
+        MakeSymbolTableEntry(STYPE_VALUEPAR);
         Accept(IDENTIFIER);
     }
     Accept(RIGHTPARENTHESIS);
@@ -687,8 +690,10 @@ PRIVATE void ParseTerm(void) {
 
 PRIVATE void ParseSubTerm(void) {
     if (CurrentToken.code == IDENTIFIER)
+        MakeSymbolTableEntry(STYPE_VARIABLE);
         Accept(IDENTIFIER);
     else if (CurrentToken.code == INTCONST)
+        MakeSymbolTableEntry(STYPE_VALUEPAR);
         Accept(INTCONST);
     else if (CurrentToken.code == LEFTPARENTHESIS) {
         Accept(LEFTPARENTHESIS);
