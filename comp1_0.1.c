@@ -680,7 +680,7 @@ PRIVATE void ParseWriteStatement(void)
 PRIVATE void ParseExpression(void)
 {
 
-    int op;
+    int op = 0;
 
     ParseCompoundTerm();
     ParseOpPrec(0);
@@ -720,7 +720,7 @@ PRIVATE void ParseExpression(void)
 PRIVATE void ParseCompoundTerm(void)
 {
 
-    int op;
+    int op = 0;
 
     ParseTerm();
 
@@ -1084,7 +1084,7 @@ PRIVATE void MakeSymbolTableEntry(int symtype)
     PRIVATE SYMBOL *newsptr;
     char *cptr;
     int hashindex;
-    int varaddress;
+    int varaddress = 0;
     if (CurrentToken.code == IDENTIFIER)
     {
         if (NULL == (oldsptr = Probe(CurrentToken.s, &hashindex)) || oldsptr->scope < scope)
