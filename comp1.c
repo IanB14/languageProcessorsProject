@@ -654,16 +654,36 @@ PRIVATE void ParseIfStatement(void)
 
 PRIVATE void ParseReadStatement(void)
 {
+	SYMBOL *var;
+
 	Accept(READ);
 	Accept(LEFTPARENTHESIS);
-	MakeSymbolTableEntry(STYPE_VALUEPAR);
+
+	var = LookupSymbol();
+	if (var != NULL && (*var).type == STYPE_VARIABLE) {
+		Emit(I_LOADA, (*var).address);
+	}
+	else {
+		Error("Not declared or not a variable", CurrentToken.code);
+	}
+	_Emit(I_READ);
 	Accept(IDENTIFIER);
+
 	while (CurrentToken.code == COMMA)
 	{
 		Accept(COMMA);
-		MakeSymbolTableEntry(STYPE_VALUEPAR);
+
+		var = LookupSymbol();
+		if (var != NULL && (*var).type == STYPE_VARIABLE) {
+			Emit(I_LOADA, (*var).address);
+		}
+		else {
+			Error("Not declared or not a variable", CurrentToken.code);
+		}
+		_Emit(I_LOADA, (*var).address);
 		Accept(IDENTIFIER);
 	}
+
 	Accept(RIGHTPARENTHESIS);
 }
 
