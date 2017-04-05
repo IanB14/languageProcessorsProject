@@ -71,6 +71,7 @@ PRIVATE void Accept(int code);
 PRIVATE void MakeSymbolTableEntry(int symtype);
 PRIVATE SYMBOL *LookupSymbol(void);
 PRIVATE void ParseOpPrec(int minPrec);
+PRIVATE void Synchronise(SET *F, SET *FB);
 
 int errCount = 0; /*Int that counts amount of errors received by parser*/
 int scope = 0;    /*Global scope*/
@@ -124,19 +125,32 @@ PUBLIC int main(int argc, char *argv[])
 
 PRIVATE void ParseProgram(void)
 {
+    /*Setup Sets Start*/
+    SET DeclarationsFS_aug_Program;
+    SET ProcDeclarationFS_aug_Program;
+    SET ProcDeclarationFBS_Program;
+    InitSet(&DeclarationsFS_aug_Program, 3, VAR, PROCEDURE, BEGIN);         /*First First Set of Program*/
+    InitSet(&ProcDeclarationFS_aug_Program, 2, PROCEDURE, BEGIN);           /*Second First Set of Program*/
+    InitSet(&ProcDeclarationFBS_Program, 3, ENDOFPROGRAM, END, ENDOFINPUT); /*Follow + Beacon Set of Program*/
+                                                                            /*Setup Sets End*/
+
 	Accept(PROGRAM);
 	MakeSymbolTableEntry(STYPE_PROGRAM);
 	Accept(IDENTIFIER);
 	Accept(SEMICOLON);
+    Synchronise(&DeclarationsFS_aug_Program, &ProcDeclarationFBS_Program); /*Augmented error recovery*/
 
 	if (CurrentToken.code == VAR)
 	{
 		ParseDeclarations();
 	}
 
+    Synchronise(&ProcDeclarationFS_aug_Program, &ProcDeclarationFBS_Program); /*Augmented error recovery*/
+
 	while (CurrentToken.code == PROCEDURE)
 	{
 		ParseProcDeclaration();
+        Synchronise(&ProcDeclarationFS_aug_Program, &ProcDeclarationFBS_Program); /*Augmented error recovery*/
 	}
 
 	ParseBlock();
@@ -198,6 +212,15 @@ PRIVATE void ParseDeclarations(void)
 
 PRIVATE void ParseProcDeclaration(void)
 {
+    /*Setup Sets Start*/
+    SET DeclarationsFS_aug_ProcDeclaration;
+    SET ProcDeclarationFS_aug_ProcDeclaration;
+    SET ProcDeclarationFSB_ProcDeclaration;
+    InitSet(&DeclarationsFS_aug_ProcDeclaration, 3, VAR, PROCEDURE, BEGIN);         /*First First Set of ProcDeclaration*/
+    InitSet(&ProcDeclarationFS_aug_ProcDeclaration, 2, PROCEDURE, BEGIN);           /*Second First Set of ProcDeclaration*/
+    InitSet(&ProcDeclarationFSB_ProcDeclaration, 3, ENDOFINPUT, ENDOFPROGRAM, END); /*Follow + Beacon Set of ProcDeclaration*/
+                                                                                    /*Setup Sets End*/
+
 	Accept(PROCEDURE);
 	MakeSymbolTableEntry(STYPE_PROCEDURE);
 	Accept(IDENTIFIER);
@@ -207,15 +230,16 @@ PRIVATE void ParseProcDeclaration(void)
 	}
 
 	Accept(SEMICOLON);
-
+    Synchronise(&DeclarationsFS_aug_ProcDeclaration, &ProcDeclarationFSB_ProcDeclaration); /*Augmented error recovery*/
 	if (CurrentToken.code == VAR)
 	{
 		ParseDeclarations();
 	}
-
+    Synchronise(&ProcDeclarationFS_aug_ProcDeclaration, &ProcDeclarationFSB_ProcDeclaration); /*Augmented error recovery*/
 	while (CurrentToken.code == PROCEDURE)
 	{
 		ParseProcDeclaration();
+        Synchronise(&ProcDeclarationFS_aug_ProcDeclaration, &ProcDeclarationFSB_ProcDeclaration); /*Augmented error recovery*/
 	}
 
 	ParseBlock();
@@ -304,12 +328,20 @@ PRIVATE void ParseFormalParameter(void)
 
 PRIVATE void ParseBlock(void)
 {
-	Accept(BEGIN);
+    /*Setup Sets Start*/
+    SET StatementFS_aug_Block;
+    SET StatementFBS_Block;
+    InitSet(&StatementFS_aug_Block, 6, IDENTIFIER, WHILE, IF, READ, WRITE, END); /*First Set of Block*/
+    InitSet(&StatementFBS_Block, 4, ELSE, ENDOFPROGRAM, ENDOFINPUT);  /*Follow + Beacon Set of Block*/
+                                                                                 /*Setup Sets End*/
 
+	Accept(BEGIN);
+    Synchronise(&StatementFS_aug_Block, &StatementFBS_Block); /*Augmented error recovery*/
 	while (CurrentToken.code == WHILE || CurrentToken.code == IF || CurrentToken.code == READ || CurrentToken.code == WRITE || CurrentToken.code == IDENTIFIER)
 	{
 		ParseStatement();
 		Accept(SEMICOLON);
+        Synchronise(&StatementFS_aug_Block, &StatementFBS_Block); /*Augmented error recovery*/
 	}
 
 	Accept(END);
@@ -1084,10 +1116,10 @@ PRIVATE int OpenFiles(int argc, char *argv[])
 	}
 
 	//Added an if statement to open the CodeFile
-	if (NULL == (CodeFile = fopen(argv[3], "c")))
+	if (NULL == (CodeFile = fopen(argv[3], "w")))
 	{
 		fprintf(stderr, "cannot open \"%s\" for output\n", argv[3]);
-		fclose(InputFile);
+		fclose(CodeFile);
 		return 0;
 	}
 
@@ -1208,4 +1240,19 @@ PRIVATE void ParseOpPrec(int minPrec)
 		_Emit(operatorInstruction[op1]);
 		op1 = CurrentToken.code;
 	}
+}
+
+PRIVATE void Synchronise(SET *F, SET *FB)
+{
+    SET S;
+
+    S = Union(2, F, FB);
+    if (!InSet(F, CurrentToken.code))
+    {
+        SyntaxError2(*F, CurrentToken);
+        while (!InSet(&S, CurrentToken.code))
+        {
+            CurrentToken = GetToken();
+        }
+    }
 }
