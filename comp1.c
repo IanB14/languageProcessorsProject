@@ -706,13 +706,18 @@ PRIVATE void ParseReadStatement(void)
 
 PRIVATE void ParseWriteStatement(void)
 {
+
 	Accept(WRITE);
 	Accept(LEFTPARENTHESIS);
+	
 	ParseExpression();
+	Emit(I_WRITE,0);
+
 	while (CurrentToken.code == COMMA)
 	{
 		Accept(COMMA);
 		ParseExpression();
+		Emit(I_WRITE, 0);
 	}
 	Accept(RIGHTPARENTHESIS);
 }
