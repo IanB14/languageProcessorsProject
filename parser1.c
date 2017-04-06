@@ -13,9 +13,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "./headers/global.h"
-#include "./headers/scanner.h"
-#include "./headers/line.h"
+#include "code.h"
+#include "debug.h"
+#include "global.h"
+#include "line.h"
+#include "scanner.h"
+#include "sets.h"
+#include "strtab.h"
+#include "symbol.h"
 
 
 /*--------------------------------------------------------------------------*/

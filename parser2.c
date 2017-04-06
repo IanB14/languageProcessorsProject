@@ -132,7 +132,6 @@ PRIVATE void ParseProgram(void)
     InitSet(&ProcDeclarationFS_aug_Program, 2, PROCEDURE, BEGIN);           /*Second First Set of Program*/
     InitSet(&ProcDeclarationFBS_Program, 3, ENDOFPROGRAM, END, ENDOFINPUT); /*Follow + Beacon Set of Program*/
                                                                             /*Setup Sets End*/
-                                                                            /*--------------------------------------------------------------------------*/
     Accept(PROGRAM);
     Accept(IDENTIFIER);
     Accept(SEMICOLON);
@@ -208,7 +207,6 @@ PRIVATE void ParseDeclarations(void)
 
 PRIVATE void ParseProcDeclaration(void)
 {
-    /*--------------------------------------------------------------------------*/
     /*Setup Sets Start*/
     SET DeclarationsFS_aug_ProcDeclaration;
     SET ProcDeclarationFS_aug_ProcDeclaration;
@@ -217,7 +215,7 @@ PRIVATE void ParseProcDeclaration(void)
     InitSet(&ProcDeclarationFS_aug_ProcDeclaration, 2, PROCEDURE, BEGIN);           /*Second First Set of ProcDeclaration*/
     InitSet(&ProcDeclarationFSB_ProcDeclaration, 3, ENDOFINPUT, ENDOFPROGRAM, END); /*Follow + Beacon Set of ProcDeclaration*/
                                                                                     /*Setup Sets End*/
-                                                                                    /*--------------------------------------------------------------------------*/
+
     Accept(PROCEDURE);
     Accept(IDENTIFIER);
 
@@ -319,14 +317,12 @@ PRIVATE void ParseFormalParameter(void)
 
 PRIVATE void ParseBlock(void)
 {
-    /*--------------------------------------------------------------------------*/
     /*Setup Sets Start*/
     SET StatementFS_aug_Block;
     SET StatementFBS_Block;
     InitSet(&StatementFS_aug_Block, 6, IDENTIFIER, WHILE, IF, READ, WRITE, END); /*First Set of Block*/
-    InitSet(&StatementFBS_Block, 4, ELSE, ENDOFPROGRAM, ENDOFINPUT);  /*Follow + Beacon Set of Block*/
+    InitSet(&StatementFBS_Block, 4, ELSE, ENDOFPROGRAM, ENDOFINPUT);             /*Follow + Beacon Set of Block*/
                                                                                  /*Setup Sets End*/
-                                                                                 /*--------------------------------------------------------------------------*/
     Accept(BEGIN);
     Synchronise(&StatementFS_aug_Block, &StatementFBS_Block); /*Augmented error recovery*/
     while (CurrentToken.code == WHILE || CurrentToken.code == IF || CurrentToken.code == READ || CurrentToken.code == WRITE || CurrentToken.code == IDENTIFIER)
@@ -516,7 +512,7 @@ PRIVATE void ParseActualParameter(void)
         ParseExpression();
     }
     else
-    { //May need to put a check in
+    {
         Accept(IDENTIFIER);
     }
 }
