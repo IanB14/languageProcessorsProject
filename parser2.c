@@ -78,6 +78,7 @@ PRIVATE void Synchronise(SET *F, SET *FB);
 
 /*--------------------------------------------------------------------------*/
 int errCount = 0;
+int scope = 0;
 
 PUBLIC int main(int argc, char *argv[])
 {
@@ -134,6 +135,7 @@ PRIVATE void ParseProgram(void)
                                                                             /*Setup Sets End*/
     Accept(PROGRAM);
     Accept(IDENTIFIER);
+    scope ++;
     Accept(SEMICOLON);
     Synchronise(&DeclarationsFS_aug_Program, &ProcDeclarationFBS_Program); /*Augmented error recovery*/
 
@@ -154,6 +156,8 @@ PRIVATE void ParseProgram(void)
 
     Accept(ENDOFPROGRAM); /* Token "." has name ENDOFPROGRAM          */
     Accept(ENDOFINPUT);
+    RemoveSymbols(scope);
+    scope--;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -218,7 +222,7 @@ PRIVATE void ParseProcDeclaration(void)
 
     Accept(PROCEDURE);
     Accept(IDENTIFIER);
-
+    scope++;
     if (CurrentToken.code == LEFTPARENTHESIS)
     {
         ParseParameterList();
@@ -240,6 +244,8 @@ PRIVATE void ParseProcDeclaration(void)
     ParseBlock();
 
     Accept(SEMICOLON);
+    RemoveSymbols(scope);
+    scope--;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -324,6 +330,7 @@ PRIVATE void ParseBlock(void)
     InitSet(&StatementFBS_Block, 4, ELSE, ENDOFPROGRAM, ENDOFINPUT);             /*Follow + Beacon Set of Block*/
                                                                                  /*Setup Sets End*/
     Accept(BEGIN);
+    scope++;
     Synchronise(&StatementFS_aug_Block, &StatementFBS_Block); /*Augmented error recovery*/
     while (CurrentToken.code == WHILE || CurrentToken.code == IF || CurrentToken.code == READ || CurrentToken.code == WRITE || CurrentToken.code == IDENTIFIER)
     {
@@ -332,6 +339,8 @@ PRIVATE void ParseBlock(void)
         Synchronise(&StatementFS_aug_Block, &StatementFBS_Block); /*Augmented error recovery*/
     }
 
+    RemoveSymbols(scope);
+    scope--;
     Accept(END);
 }
 

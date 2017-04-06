@@ -33,8 +33,8 @@ PRIVATE FILE *ListFile;  /*  For nicely-formatted syntax errors.  */
 PRIVATE FILE *CodeFile;  /*  This is the output machine code file */
 
 PRIVATE TOKEN CurrentToken; /*  Parser lookahead token.  Updated by  */
-			    /*  routine Accept (below).  Must be     */
-			    /*  initialised before parser starts.    */
+                            /*  routine Accept (below).  Must be     */
+                            /*  initialised before parser starts.    */
 
 /*--------------------------------------------------------------------------*/
 /*                                                                          */
@@ -84,21 +84,22 @@ PUBLIC int main(int argc, char *argv[])
 {
     if (OpenFiles(argc, argv))
     {
-	InitCharProcessor(InputFile, ListFile);
-	InitCodeGenerator(CodeFile);
-	CurrentToken = GetToken();
-	ParseProgram();
-	WriteCodeFile();
-	fclose(InputFile);
-	fclose(ListFile);
-	if (errCount == 0)
-	{
-	    printf("Valid\n");
-	}
-	return EXIT_SUCCESS;
+        InitCharProcessor(InputFile, ListFile);
+        InitCodeGenerator(CodeFile);
+        CurrentToken = GetToken();
+        ParseProgram();
+        WriteCodeFile();
+        fclose(InputFile);
+        fclose(ListFile);
+        fclose(CodeFile);
+        if (errCount == 0)
+        {
+            printf("Valid\n");
+        }
+        return EXIT_SUCCESS;
     }
     else
-	return EXIT_FAILURE;
+        return EXIT_FAILURE;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -129,34 +130,37 @@ PRIVATE void ParseProgram(void)
     SET DeclarationsFS_aug_Program;
     SET ProcDeclarationFS_aug_Program;
     SET ProcDeclarationFBS_Program;
-    InitSet(&DeclarationsFS_aug_Program, 3, VAR, PROCEDURE, BEGIN);	 /*First First Set of Program*/
-    InitSet(&ProcDeclarationFS_aug_Program, 2, PROCEDURE, BEGIN);	   /*Second First Set of Program*/
+    InitSet(&DeclarationsFS_aug_Program, 3, VAR, PROCEDURE, BEGIN);         /*First First Set of Program*/
+    InitSet(&ProcDeclarationFS_aug_Program, 2, PROCEDURE, BEGIN);           /*Second First Set of Program*/
     InitSet(&ProcDeclarationFBS_Program, 3, ENDOFPROGRAM, END, ENDOFINPUT); /*Follow + Beacon Set of Program*/
-									    /*Setup Sets End*/
+                                                                            /*Setup Sets End*/
 
     Accept(PROGRAM);
     MakeSymbolTableEntry(STYPE_PROGRAM);
     Accept(IDENTIFIER);
+    scope ++;
     Accept(SEMICOLON);
     Synchronise(&DeclarationsFS_aug_Program, &ProcDeclarationFBS_Program); /*Augmented error recovery*/
 
     if (CurrentToken.code == VAR)
     {
-	ParseDeclarations();
+        ParseDeclarations();
     }
 
     Synchronise(&ProcDeclarationFS_aug_Program, &ProcDeclarationFBS_Program); /*Augmented error recovery*/
 
     while (CurrentToken.code == PROCEDURE)
     {
-	ParseProcDeclaration();
-	Synchronise(&ProcDeclarationFS_aug_Program, &ProcDeclarationFBS_Program); /*Augmented error recovery*/
+        ParseProcDeclaration();
+        Synchronise(&ProcDeclarationFS_aug_Program, &ProcDeclarationFBS_Program); /*Augmented error recovery*/
     }
 
     ParseBlock();
 
     Accept(ENDOFPROGRAM); /* Token "." has name ENDOFPROGRAM          */
     Accept(ENDOFINPUT);
+    RemoveSymbols(scope);
+    scope--;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -184,9 +188,9 @@ PRIVATE void ParseDeclarations(void)
 
     while (CurrentToken.code == COMMA)
     {
-	Accept(COMMA);
-	MakeSymbolTableEntry(STYPE_VARIABLE);
-	Accept(IDENTIFIER);
+        Accept(COMMA);
+        MakeSymbolTableEntry(STYPE_VARIABLE);
+        Accept(IDENTIFIER);
     }
 
     Accept(SEMICOLON);
@@ -216,30 +220,31 @@ PRIVATE void ParseProcDeclaration(void)
     SET DeclarationsFS_aug_ProcDeclaration;
     SET ProcDeclarationFS_aug_ProcDeclaration;
     SET ProcDeclarationFSB_ProcDeclaration;
-    InitSet(&DeclarationsFS_aug_ProcDeclaration, 3, VAR, PROCEDURE, BEGIN);	 /*First First Set of ProcDeclaration*/
-    InitSet(&ProcDeclarationFS_aug_ProcDeclaration, 2, PROCEDURE, BEGIN);	   /*Second First Set of ProcDeclaration*/
+    InitSet(&DeclarationsFS_aug_ProcDeclaration, 3, VAR, PROCEDURE, BEGIN);         /*First First Set of ProcDeclaration*/
+    InitSet(&ProcDeclarationFS_aug_ProcDeclaration, 2, PROCEDURE, BEGIN);           /*Second First Set of ProcDeclaration*/
     InitSet(&ProcDeclarationFSB_ProcDeclaration, 3, ENDOFINPUT, ENDOFPROGRAM, END); /*Follow + Beacon Set of ProcDeclaration*/
-										    /*Setup Sets End*/
+                                                                                    /*Setup Sets End*/
 
     Accept(PROCEDURE);
     MakeSymbolTableEntry(STYPE_PROCEDURE);
     Accept(IDENTIFIER);
+    scope++;
     if (CurrentToken.code == LEFTPARENTHESIS)
     {
-	ParseParameterList();
+        ParseParameterList();
     }
 
     Accept(SEMICOLON);
     Synchronise(&DeclarationsFS_aug_ProcDeclaration, &ProcDeclarationFSB_ProcDeclaration); /*Augmented error recovery*/
     if (CurrentToken.code == VAR)
     {
-	ParseDeclarations();
+        ParseDeclarations();
     }
     Synchronise(&ProcDeclarationFS_aug_ProcDeclaration, &ProcDeclarationFSB_ProcDeclaration); /*Augmented error recovery*/
     while (CurrentToken.code == PROCEDURE)
     {
-	ParseProcDeclaration();
-	Synchronise(&ProcDeclarationFS_aug_ProcDeclaration, &ProcDeclarationFSB_ProcDeclaration); /*Augmented error recovery*/
+        ParseProcDeclaration();
+        Synchronise(&ProcDeclarationFS_aug_ProcDeclaration, &ProcDeclarationFSB_ProcDeclaration); /*Augmented error recovery*/
     }
 
     ParseBlock();
@@ -273,8 +278,8 @@ PRIVATE void ParseParameterList(void)
 
     while (CurrentToken.code == COMMA)
     {
-	Accept(COMMA);
-	ParseFormalParameter();
+        Accept(COMMA);
+        ParseFormalParameter();
     }
 
     Accept(RIGHTPARENTHESIS);
@@ -300,12 +305,12 @@ PRIVATE void ParseFormalParameter(void)
 {
     if (CurrentToken.code == REF)
     {
-	Accept(REF);
-	MakeSymbolTableEntry(STYPE_REFPAR);
+        Accept(REF);
+        MakeSymbolTableEntry(STYPE_REFPAR);
     }
     else
     {
-	MakeSymbolTableEntry(STYPE_VALUEPAR);
+        MakeSymbolTableEntry(STYPE_VALUEPAR);
     }
     Accept(IDENTIFIER);
 }
@@ -332,18 +337,20 @@ PRIVATE void ParseBlock(void)
     SET StatementFS_aug_Block;
     SET StatementFBS_Block;
     InitSet(&StatementFS_aug_Block, 6, IDENTIFIER, WHILE, IF, READ, WRITE, END); /*First Set of Block*/
-    InitSet(&StatementFBS_Block, 4, ELSE, ENDOFPROGRAM, ENDOFINPUT);		 /*Follow + Beacon Set of Block*/
-										 /*Setup Sets End*/
+    InitSet(&StatementFBS_Block, 4, ELSE, ENDOFPROGRAM, ENDOFINPUT);             /*Follow + Beacon Set of Block*/
+                                                                                 /*Setup Sets End*/
 
     Accept(BEGIN);
+    scope++;
     Synchronise(&StatementFS_aug_Block, &StatementFBS_Block); /*Augmented error recovery*/
     while (CurrentToken.code == WHILE || CurrentToken.code == IF || CurrentToken.code == READ || CurrentToken.code == WRITE || CurrentToken.code == IDENTIFIER)
     {
-	ParseStatement();
-	Accept(SEMICOLON);
-	Synchronise(&StatementFS_aug_Block, &StatementFBS_Block); /*Augmented error recovery*/
+        ParseStatement();
+        Accept(SEMICOLON);
+        Synchronise(&StatementFS_aug_Block, &StatementFBS_Block); /*Augmented error recovery*/
     }
-
+    RemoveSymbols(scope);
+    scope--;
     Accept(END);
 }
 
@@ -375,23 +382,23 @@ PRIVATE void ParseStatement(void)
 
     if (CurrentToken.code == WHILE)
     {
-	ParseWhileStatement();
+        ParseWhileStatement();
     }
     else if (CurrentToken.code == IF)
     {
-	ParseIfStatement();
+        ParseIfStatement();
     }
     else if (CurrentToken.code == READ)
     {
-	ParseReadStatement();
+        ParseReadStatement();
     }
     else if (CurrentToken.code == WRITE)
     {
-	ParseWriteStatement();
+        ParseWriteStatement();
     }
     else
     {
-	ParseSimpleStatement();
+        ParseSimpleStatement();
     }
 }
 
@@ -447,28 +454,28 @@ PRIVATE void ParseRestOfStatement(SYMBOL *target)
     switch (CurrentToken.code)
     {
     case LEFTPARENTHESIS:
-	ParseProcCallList(target);
+        ParseProcCallList(target);
 
     case SEMICOLON:
-	if (target != NULL && target->type == STYPE_PROCEDURE)
-	    Emit(I_CALL, target->address);
-	else
-	{
-	    printf("Error - Not a procedure");
-	    KillCodeGeneration();
-	}
-	break;
+        if (target != NULL && target->type == STYPE_PROCEDURE)
+            Emit(I_CALL, target->address);
+        else
+        {
+            printf("Error - Not a procedure");
+            KillCodeGeneration();
+        }
+        break;
 
     case ASSIGNMENT:
     default:
-	ParseAssignment();
-	if (target != NULL && target->type == STYPE_VARIABLE)
-	    Emit(I_STOREA, target->address);
-	else
-	{
-	    printf("Error - undeclared variable");
-	    KillCodeGeneration();
-	}
+        ParseAssignment();
+        if (target != NULL && target->type == STYPE_VARIABLE)
+            Emit(I_STOREA, target->address);
+        else
+        {
+            printf("Error - undeclared variable");
+            KillCodeGeneration();
+        }
     }
     /* Nothing needs to be parsed for epsilon */
 }
@@ -498,8 +505,8 @@ PRIVATE void ParseProcCallList(SYMBOL *target)
 
     while (CurrentToken.code == COMMA)
     {
-	Accept(COMMA);
-	ParseActualParameter();
+        Accept(COMMA);
+        ParseActualParameter();
     }
 
     Accept(RIGHTPARENTHESIS);
@@ -547,16 +554,16 @@ PRIVATE void ParseActualParameter(void)
 {
     if (CurrentToken.code == SUBTRACT)
     {
-	ParseExpression();
+        ParseExpression();
     }
     else if (CurrentToken.code == IDENTIFIER || CurrentToken.code == INTCONST || CurrentToken.code == LEFTPARENTHESIS)
     {
-	ParseExpression();
+        ParseExpression();
     }
     else
     {
-	MakeSymbolTableEntry(STYPE_LOCALVAR);
-	Accept(IDENTIFIER);
+        MakeSymbolTableEntry(STYPE_LOCALVAR);
+        Accept(IDENTIFIER);
     }
 }
 
@@ -621,19 +628,19 @@ PRIVATE void ParseIfStatement(void)
 
     if (CurrentToken.code == ELSE)
     {
-	L2BackPatchLoc = CurrentCodeAddress();
-	Emit(I_BR, 0);
-	Accept(ELSE);
-	Label1 = CurrentCodeAddress();
-	BackPatch(L1BackPatchLoc, Label1);
-	ParseBlock();
-	Label2 = CurrentCodeAddress();
-	BackPatch(L2BackPatchLoc, Label2);
+        L2BackPatchLoc = CurrentCodeAddress();
+        Emit(I_BR, 0);
+        Accept(ELSE);
+        Label1 = CurrentCodeAddress();
+        BackPatch(L1BackPatchLoc, Label1);
+        ParseBlock();
+        Label2 = CurrentCodeAddress();
+        BackPatch(L2BackPatchLoc, Label2);
     }
     else
     {
-	Label1 = CurrentCodeAddress();
-	BackPatch(L1BackPatchLoc, Label1);
+        Label1 = CurrentCodeAddress();
+        BackPatch(L1BackPatchLoc, Label1);
     }
 }
 
@@ -664,30 +671,30 @@ PRIVATE void ParseReadStatement(void)
     var = LookupSymbol();
     if (var != NULL && (*var).type == STYPE_VARIABLE)
     {
-	Emit(I_LOADA, (*var).address);
+        Emit(I_LOADA, (*var).address);
     }
     else
     {
-	Error("Not declared or not a variable", CurrentToken.code);
+        Error("Not declared or not a variable", CurrentToken.code);
     }
     _Emit(I_READ);
     Accept(IDENTIFIER);
 
     while (CurrentToken.code == COMMA)
     {
-	Accept(COMMA);
+        Accept(COMMA);
 
-	var = LookupSymbol();
-	if (var != NULL && (*var).type == STYPE_VARIABLE)
-	{
-	    Emit(I_LOADA, (*var).address);
-	}
-	else
-	{
-	    Error("Not declared or not a variable", CurrentToken.code);
-	}
-	_Emit(I_LOADA);
-	Accept(IDENTIFIER);
+        var = LookupSymbol();
+        if (var != NULL && (*var).type == STYPE_VARIABLE)
+        {
+            Emit(I_LOADA, (*var).address);
+        }
+        else
+        {
+            Error("Not declared or not a variable", CurrentToken.code);
+        }
+        _Emit(I_LOADA);
+        Accept(IDENTIFIER);
     }
 
     Accept(RIGHTPARENTHESIS);
@@ -721,9 +728,9 @@ PRIVATE void ParseWriteStatement(void)
 
     while (CurrentToken.code == COMMA)
     {
-	Accept(COMMA);
-	ParseExpression();
-	Emit(I_WRITE, 0);
+        Accept(COMMA);
+        ParseExpression();
+        Emit(I_WRITE, 0);
     }
     Accept(RIGHTPARENTHESIS);
 }
@@ -758,13 +765,13 @@ PRIVATE void ParseExpression(void)
     ParseOpPrec(0);
     while ((CurrentToken.code == ADD) || (CurrentToken.code == SUBTRACT))
     {
-	ParseAddOp();
-	ParseCompoundTerm();
+        ParseAddOp();
+        ParseCompoundTerm();
 
-	if (op == ADD)
-	    _Emit(I_ADD);
-	else
-	    _Emit(I_SUB);
+        if (op == ADD)
+            _Emit(I_ADD);
+        else
+            _Emit(I_SUB);
     }
 }
 
@@ -798,13 +805,13 @@ PRIVATE void ParseCompoundTerm(void)
 
     while ((CurrentToken.code == MULTIPLY) || (CurrentToken.code == DIVIDE))
     {
-	ParseMultOp();
-	ParseTerm();
+        ParseMultOp();
+        ParseTerm();
 
-	if (op == MULTIPLY)
-	    _Emit(I_MULT);
-	else
-	    _Emit(I_DIV);
+        if (op == MULTIPLY)
+            _Emit(I_MULT);
+        else
+            _Emit(I_DIV);
     }
 }
 
@@ -835,12 +842,14 @@ PRIVATE void ParseTerm(void)
     int negateflag = 0;
 
     if (CurrentToken.code == SUBTRACT)
-	negateflag = 1;
-    Accept(SUBTRACT);
+    {
+        negateflag = 1;
+        Accept(SUBTRACT);
+    }
     ParseSubTerm();
 
     if (negateflag)
-	_Emit(I_NEG);
+        _Emit(I_NEG);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -873,26 +882,26 @@ PRIVATE void ParseSubTerm(void)
     {
     case IDENTIFIER:
     default:
-	var = LookupSymbol();
-	if (var != NULL && var->type == STYPE_VARIABLE)
-	{
-	    Emit(I_LOADA, var->address);
-	}
-	else
-	{
-	    printf("Error - Name undeclared or not a variable");
-	    Accept(IDENTIFIER);
-	    break;
-	}
+        var = LookupSymbol();
+        if (var != NULL && var->type == STYPE_VARIABLE)
+        {
+            Emit(I_LOADA, var->address);
+        }
+        else
+        {
+            printf("Error - Name undeclared or not a variable");
+            Accept(IDENTIFIER);
+            break;
+        }
     case INTCONST:
-	Emit(I_LOADI, CurrentToken.value);
-	Accept(INTCONST);
-	break;
+        Emit(I_LOADI, CurrentToken.value);
+        Accept(INTCONST);
+        break;
     case LEFTPARENTHESIS:
-	Accept(LEFTPARENTHESIS);
-	ParseExpression();
-	Accept(RIGHTPARENTHESIS);
-	break;
+        Accept(LEFTPARENTHESIS);
+        ParseExpression();
+        Accept(RIGHTPARENTHESIS);
+        break;
     }
 }
 
@@ -954,9 +963,9 @@ PRIVATE int ParseBooleanExpression(void)
 PRIVATE void ParseAddOp(void)
 {
     if (CurrentToken.code == ADD)
-	Accept(ADD);
+        Accept(ADD);
     else if (CurrentToken.code == SUBTRACT)
-	Accept(SUBTRACT);
+        Accept(SUBTRACT);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -983,9 +992,9 @@ PRIVATE void ParseAddOp(void)
 PRIVATE void ParseMultOp(void)
 {
     if (CurrentToken.code == MULTIPLY)
-	Accept(MULTIPLY);
+        Accept(MULTIPLY);
     else if (CurrentToken.code == DIVIDE)
-	Accept(DIVIDE);
+        Accept(DIVIDE);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1017,25 +1026,25 @@ PRIVATE int ParseRelOp(void)
     switch (CurrentToken.code)
     {
     case LESSEQUAL:
-	RelOpInstruction = I_BG;
-	Accept(LESSEQUAL);
-	break;
+        RelOpInstruction = I_BG;
+        Accept(LESSEQUAL);
+        break;
     case GREATEREQUAL:
-	RelOpInstruction = I_BL;
-	Accept(GREATEREQUAL);
-	break;
+        RelOpInstruction = I_BL;
+        Accept(GREATEREQUAL);
+        break;
     case LESS:
-	RelOpInstruction = I_BGZ;
-	Accept(LESS);
-	break;
+        RelOpInstruction = I_BGZ;
+        Accept(LESS);
+        break;
     case GREATER:
-	RelOpInstruction = I_BLZ;
-	Accept(GREATER);
-	break;
+        RelOpInstruction = I_BLZ;
+        Accept(GREATER);
+        break;
     case EQUALITY:
-	RelOpInstruction = I_BR;
-	Accept(EQUALITY);
-	break;
+        RelOpInstruction = I_BR;
+        Accept(EQUALITY);
+        break;
     }
 
     return RelOpInstruction;
@@ -1084,19 +1093,19 @@ PRIVATE void Accept(int ExpectedToken)
     static int recovering = 0;
     if (recovering)
     {
-	while (CurrentToken.code != ExpectedToken && CurrentToken.code != ENDOFINPUT)
-	    CurrentToken = GetToken();
-	recovering = 0;
+        while (CurrentToken.code != ExpectedToken && CurrentToken.code != ENDOFINPUT)
+            CurrentToken = GetToken();
+        recovering = 0;
     }
     if (CurrentToken.code != ExpectedToken)
     {
-	printf("Syntax Error\n");
-	SyntaxError(ExpectedToken, CurrentToken);
-	errCount++;
-	recovering = 1;
+        printf("Syntax Error\n");
+        SyntaxError(ExpectedToken, CurrentToken);
+        errCount++;
+        recovering = 1;
     }
     else
-	CurrentToken = GetToken();
+        CurrentToken = GetToken();
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1127,31 +1136,31 @@ PRIVATE void Accept(int ExpectedToken)
 PRIVATE int OpenFiles(int argc, char *argv[])
 {
 
-    if (argc != 3)
+    if (argc != 4)
     {
-	fprintf(stderr, "%s <inputfile> <listfile>\n", argv[0]);
-	return 0;
+        fprintf(stderr, "%s <inputfile> <listfile> <codefile>\n", argv[0]);
+        return 0;
     }
 
     if (NULL == (InputFile = fopen(argv[1], "r")))
     {
-	fprintf(stderr, "cannot open \"%s\" for input\n", argv[1]);
-	return 0;
+        fprintf(stderr, "cannot open \"%s\" for input\n", argv[1]);
+        return 0;
     }
 
     if (NULL == (ListFile = fopen(argv[2], "w")))
     {
-	fprintf(stderr, "cannot open \"%s\" for output\n", argv[2]);
-	fclose(InputFile);
-	return 0;
+        fprintf(stderr, "cannot open \"%s\" for output\n", argv[2]);
+        fclose(InputFile);
+        return 0;
     }
 
     /*Added an if statement to open the CodeFile*/
     if (NULL == (CodeFile = fopen(argv[3], "w")))
     {
-	fprintf(stderr, "cannot open \"%s\" for output\n", argv[3]);
-	fclose(CodeFile);
-	return 0;
+        fprintf(stderr, "cannot open \"%s\" for output\n", argv[3]);
+        fclose(CodeFile);
+        return 0;
     }
 
     return 1;
@@ -1167,35 +1176,35 @@ PRIVATE void MakeSymbolTableEntry(int symtype)
     int varaddress = 0;
     if (CurrentToken.code == IDENTIFIER)
     {
-	if (NULL == (oldsptr = Probe(CurrentToken.s, &hashindex)) || oldsptr->scope < scope)
-	{
-	    if (oldsptr == NULL)
-		cptr = CurrentToken.s;
-	    else
-		cptr = oldsptr->s;
-	    if (NULL == (newsptr = EnterSymbol(cptr, hashindex)))
-	    {
-		KillCodeGeneration();
-	    }
-	    else
-	    {
-		if (oldsptr == NULL)
-		    PreserveString();
-		newsptr->scope = scope;
-		newsptr->type = symtype;
-		if (symtype == STYPE_VARIABLE)
-		{
-		    newsptr->address = varaddress;
-		    varaddress++;
-		}
-		else
-		    newsptr->address = -1;
-	    }
-	}
-	else
-	{
-	    Error("Variable already declared", CurrentToken.pos);
-	}
+        if (NULL == (oldsptr = Probe(CurrentToken.s, &hashindex)) || oldsptr->scope < scope)
+        {
+            if (oldsptr == NULL)
+                cptr = CurrentToken.s;
+            else
+                cptr = oldsptr->s;
+            if (NULL == (newsptr = EnterSymbol(cptr, hashindex)))
+            {
+                KillCodeGeneration();
+            }
+            else
+            {
+                if (oldsptr == NULL)
+                    PreserveString();
+                newsptr->scope = scope;
+                newsptr->type = symtype;
+                if (symtype == STYPE_VARIABLE)
+                {
+                    newsptr->address = varaddress;
+                    varaddress++;
+                }
+                else
+                    newsptr->address = -1;
+            }
+        }
+        else
+        {
+            Error("Variable already declared", CurrentToken.pos);
+        }
     }
 }
 
@@ -1204,15 +1213,15 @@ PRIVATE SYMBOL *LookupSymbol(void)
     SYMBOL *sptr;
     if (CurrentToken.code == IDENTIFIER)
     {
-	sptr = Probe(CurrentToken.s, NULL);
-	if (sptr == NULL)
-	{
-	    Error("Identifier not declared", CurrentToken.pos);
-	    KillCodeGeneration();
-	}
+        sptr = Probe(CurrentToken.s, NULL);
+        if (sptr == NULL)
+        {
+            Error("Identifier not declared", CurrentToken.pos);
+            KillCodeGeneration();
+        }
     }
     else
-	sptr = NULL;
+        sptr = NULL;
     return sptr;
 }
 
@@ -1252,24 +1261,24 @@ PRIVATE void ParseOpPrec(int minPrec)
     /* reached, precedence will be less than one, which will end the loop */
     while (prec[op1] >= minPrec)
     {
-	CurrentToken = GetToken();
+        CurrentToken = GetToken();
 
-	/* NOTE: This ParseTerm() was previously ParseInt(). This was replaced to handle */
-	/* parentheses and unary minuses */
-	ParseTerm();
-	/* Get the second operator and write it to op2 */
-	op2 = CurrentToken.code;
+        /* NOTE: This ParseTerm() was previously ParseInt(). This was replaced to handle */
+        /* parentheses and unary minuses */
+        ParseTerm();
+        /* Get the second operator and write it to op2 */
+        op2 = CurrentToken.code;
 
-	/* If op1 has a higher precedence than op2, op1 is run immediately */
-	/* Otherwise, the precedence of op1 is incremented and the function is */
-	/* called recursively */
-	if (prec[op2] > prec[op1])
-	    ParseOpPrec(prec[op1] + 1);
+        /* If op1 has a higher precedence than op2, op1 is run immediately */
+        /* Otherwise, the precedence of op1 is incremented and the function is */
+        /* called recursively */
+        if (prec[op2] > prec[op1])
+            ParseOpPrec(prec[op1] + 1);
 
-	/* Emit whatever the operation is for op1 using the operatorInstruction */
-	/* array above. */
-	_Emit(operatorInstruction[op1]);
-	op1 = CurrentToken.code;
+        /* Emit whatever the operation is for op1 using the operatorInstruction */
+        /* array above. */
+        _Emit(operatorInstruction[op1]);
+        op1 = CurrentToken.code;
     }
 }
 
@@ -1280,10 +1289,10 @@ PRIVATE void Synchronise(SET *F, SET *FB)
     S = Union(2, F, FB);
     if (!InSet(F, CurrentToken.code))
     {
-	SyntaxError2(*F, CurrentToken);
-	while (!InSet(&S, CurrentToken.code))
-	{
-	    CurrentToken = GetToken();
-	}
+        SyntaxError2(*F, CurrentToken);
+        while (!InSet(&S, CurrentToken.code))
+        {
+            CurrentToken = GetToken();
+        }
     }
 }
