@@ -135,7 +135,7 @@ PRIVATE void ParseProgram(void)
                                                                             /*Setup Sets End*/
     Accept(PROGRAM);
     Accept(IDENTIFIER);
-    scope ++;
+    scope++;
     Accept(SEMICOLON);
     Synchronise(&DeclarationsFS_aug_Program, &ProcDeclarationFBS_Program); /*Augmented error recovery*/
 
