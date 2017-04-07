@@ -408,7 +408,8 @@ PRIVATE void ParseProcCallList(void)
 
     ParseActualParameter();
 
-    while (CurrentToken.code == COMMA)
+
+    while (CurrentToken.code == COMMA) 
     {
         Accept(COMMA);
         ParseActualParameter();
